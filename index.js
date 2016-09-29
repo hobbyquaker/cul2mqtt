@@ -33,8 +33,8 @@ log.loglevel =          config.verbosity;
 log.info(pkg.name, pkg.version, 'starting');
 
 log.info('mqtt trying to connect', config.url);
-var mqtt = Mqtt.connect(config.url, {will: {topic: config.name + '/connected', payload: '0'}});
-mqtt.publish(config.name + '/connected', '1');
+var mqtt = Mqtt.connect(config.url, {will: {topic: config.name + '/connected', payload: '0', retain: true}});
+mqtt.publish(config.name + '/connected', '1', {retain: true});
 
 var connected;
 
@@ -65,7 +65,7 @@ var cul = new Cul({
 cul.on('ready', function () {
 
     log.info('cul ready');
-    mqtt.publish(config.name + '/connected', '2');
+    mqtt.publish(config.name + '/connected', '2', {retain: true});
 
 });
 
@@ -108,7 +108,7 @@ cul.on('data', function (raw, obj) {
         switch (obj.protocol) {
             case 'EM':
                 topic = prefix + map(obj.protocol + '/' + obj.address);
-                val.val = obj.data.total;
+                val.val = obj.data.current;
                 val.cul_em = obj.data;
                 if (obj.rssi) val.cul_rssi = obj.rssi;
                 if (obj.device) val.cul_device = obj.device;
