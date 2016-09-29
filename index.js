@@ -24,11 +24,11 @@ var config =    require('yargs')
         's': '/dev/ttyACM0'
     })
     //.config('config')
-    .version(pkg.name + ' ' + pkg.version + '\n', 'version')
+    .version()
     .help('help')
     .argv;
 
-log.loglevel =          config.verbosity;
+log.setLevel(config.verbosity);
 
 log.info(pkg.name, pkg.version, 'starting');
 

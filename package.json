@@ -1,16 +1,18 @@
 {
   "name": "cul2mqtt",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "dependencies": {
-    "cul": "^0.1.2",
-    "mqtt": "^1.3.5",
-    "yargs": "^3.15.0",
-    "yalm": "^1.0.1"
+    "cul": "^0.2.1",
+    "mqtt": "^2.0.1",
+    "yalm": "^4.0.2",
+    "yargs": "^5.0.0"
   },
   "description": "Interface between Busware CUL and MQTT",
   "main": "index.js",
   "preferGlobal": true,
-  "bin": "./index.js",
+  "bin": {
+    "cul2mqtt": "./index.js"
+  },
   "devDependencies": {},
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -31,10 +33,19 @@
     "Smarthome",
     "MQTT"
   ],
-  "author": "Sebastian 'hobbyquaker' Raff <hq@ccu.io>",
-  "license": "GPLv2",
+  "author": {
+    "name": "Sebastian 'hobbyquaker' Raff",
+    "email": "hq@ccu.io"
+  },
+  "license": "GPL-2.0",
   "bugs": {
     "url": "https://github.com/hobbyquaker/cul2mqtt/issues"
   },
-  "homepage": "https://github.com/hobbyquaker/cul2mqtt"
+  "homepage": "https://github.com/hobbyquaker/cul2mqtt",
+  "readme": "# cul2mqtt\n\nConnect [CUL](http://shop.busware.de/product_info.php/products_id/29) to MQTT (FS20, HMS, EM, ...)\n\n## Installation\n\nNode.js/npm needed.\n\n```\nsudo npm install -g cul2mqtt\ncul2mqtt --help\n```\n\n## License\n\nCopyright (c) 2015 Sebastian 'hobbyquaker' Raff <hq@ccu.io>\n",
+  "readmeFilename": "README.md",
+  "_id": "cul2mqtt@0.0.1",
+  "_shasum": "aa7c69c2017be74e40f4d33f309ee7b09f90fb35",
+  "_from": "cul2mqtt@",
+  "_resolved": "https://registry.npmjs.org/cul2mqtt/-/cul2mqtt-0.0.1.tgz"
 }
