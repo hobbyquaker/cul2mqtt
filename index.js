@@ -112,9 +112,9 @@ cul.on('data', (raw, obj) => {
                 log.warn('unknown protocol', obj.protocol);
         }
     }
+});
 
-    cul.on('close', () => {
-        culConnected = false;
-        mqtt.publish(config.name + '/connected', '1', {retain: true});
-    });
+cul.on('close', () => {
+    culConnected = false;
+    mqtt.publish(config.name + '/connected', '1', {retain: true});
 });
