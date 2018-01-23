@@ -15,8 +15,8 @@ Node.js/npm needed.
 
 `$ npm install -g cul2mqtt`
 
-I suggest to use [pm2](http://pm2.keymetrics.io/) to manage the hm2mqtt process (start on system boot, manage log files, 
-...)
+I suggest to use [pm2](http://pm2.keymetrics.io/) to manage the cul2mqtt process (start on system boot, manage log 
+files, ...)
 
 
 ## Command Line Options
