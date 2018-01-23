@@ -1,145 +1,120 @@
 #!/usr/bin/env node
-var Mqtt =      require('mqtt');
-var Cul =       require('cul');
-var pkg =       require('./package.json');
-var log =       require('yalm');
-var config =    require('yargs')
-    .usage(pkg.name + ' ' + pkg.version + '\n' + pkg.description + '\n\nUsage: $0 [options]')
-    .describe('v', 'possible values: "error", "warn", "info", "debug"')
-    .describe('n', 'topic prefix')
-    .describe('u', 'mqtt broker url. See https://github.com/mqttjs/MQTT.js#connect-using-a-url')
-    .describe('h', 'show help')
-    .describe('s', 'CUL serial port')
-    .alias({
-        'h': 'help',
-        'n': 'name',
-        'u': 'url',
-        'v': 'verbosity',
-        's': 'serialport'
-    })
-    .default({
-        'u': 'mqtt://127.0.0.1',
-        'n': 'cul',
-        'v': 'info',
-        's': '/dev/ttyACM0'
-    })
-    //.config('config')
-    .version()
-    .help('help')
-    .argv;
+
+const Mqtt = require('mqtt');
+const Cul = require('cul');
+const log = require('yalm');
+const pkg = require('./package.json');
+const config = require('./config.js');
+
+const topicMap = require(config.mapFile);
+
+function map(topic) {
+    return topicMap[topic] || topic;
+}
+
+let mqttConnected;
+let culConnected;
 
 log.setLevel(config.verbosity);
 
 log.info(pkg.name, pkg.version, 'starting');
 
 log.info('mqtt trying to connect', config.url);
-var mqtt = Mqtt.connect(config.url, {will: {topic: config.name + '/connected', payload: '0', retain: true}});
-mqtt.publish(config.name + '/connected', '1', {retain: true});
+const mqtt = Mqtt.connect(config.url, {will: {topic: config.name + '/connected', payload: '0', retain: true}});
 
-var connected;
+const cul = new Cul({
+    serialport: config.serialport,
+    mode: config.culMode
+});
 
-mqtt.on('connect', function () {
-    connected = true;
+mqtt.publish(config.name + '/connected', culConnected ? '2' : '1', {retain: true});
+
+mqtt.on('connect', () => {
+    mqttConnected = true;
     log.info('mqtt connected ' + config.url);
     mqtt.subscribe(config.prefix + '/set/#');
 });
 
-mqtt.on('close', function () {
-    if (connected) {
-        connected = false;
+mqtt.on('close', () => {
+    if (mqttConnected) {
+        mqttConnected = false;
         log.info('mqtt closed ' + config.url);
     }
 });
 
-mqtt.on('error', function () {
+mqtt.on('error', () => {
     log.error('mqtt error ' + config.url);
 });
 
-
-
-var cul = new Cul({
-    serialport: config.serialport,
-    mode: 'SlowRF'
-});
-
-cul.on('ready', function () {
-
+cul.on('ready', () => {
     log.info('cul ready');
+    culConnected = true;
     mqtt.publish(config.name + '/connected', '2', {retain: true});
-
 });
 
-
-// TODO - read topicMap from json file, remove hardcoded personal stuff here.
-var topicMap = {
-    'EM/0205': 'Leistung Spülmaschine',
-    'EM/0206': 'Leistung Trockner',
-    'EM/0309': 'Gaszähler',
-    'FS20/6C4800': 'Klingel',
-    'FS20/B33100': 'RC8:1',
-    'FS20/B33101': 'RC8:2',
-    'FS20/B33102': 'RC8:3',
-    'FS20/B33103': 'RC8:4',
-    'FS20/446000': 'Gastherme Brenner',
-    'FS20/446001': 'Gastherme Brenner',
-    'WS/1/temperature': 'Temperatur Wohnzimmer',
-    'WS/1/humidity': 'Luftfeuchte Wohnzimmer',
-    'WS/4/temperature': 'Temperatur Garten',
-    'WS/4/humidity': 'Luftfeuchte Garten',
-    'HMS/A5E3/temperature': 'Temperatur Aquarium'
-};
-
-function map(topic) {
-    return topicMap[topic] || topic;
-}
-
-cul.on('data', function (raw, obj) {
+cul.on('data', (raw, obj) => {
     log.debug('<', raw, obj);
 
-    var prefix = config.name + '/status/';
-    var topic;
-    var val = {
-        ts: new Date().getTime()
+    const prefix = config.name + '/status/';
+    let topic;
+    const payload = {
+        ts: new Date().getTime(),
+        cul: {}
     };
 
-
     if (obj && obj.protocol && obj.data) {
-
         switch (obj.protocol) {
             case 'EM':
                 topic = prefix + map(obj.protocol + '/' + obj.address);
-                val.val = obj.data.current;
-                val.cul_em = obj.data;
-                if (obj.rssi) val.cul_rssi = obj.rssi;
-                if (obj.device) val.cul_device = obj.device;
-                log.debug('>', topic, val);
-                mqtt.publish(topic, JSON.stringify(val), {retain: true});
+                payload.val = obj.data.current;
+                payload.cul.em = obj.data;
+                if (obj.rssi) {
+                    payload.cul.rssi = obj.rssi;
+                }
+                if (obj.device) {
+                    payload.cul.device = obj.device;
+                }
+                log.debug('>', topic, payload);
+                mqtt.publish(topic, JSON.stringify(payload), {retain: true});
                 break;
 
             case 'HMS':
             case 'WS':
-                for (var el in obj.data) {
+                Object.keys(obj.data).forEach(el => {
                     topic = prefix + map(obj.protocol + '/' + obj.address + '/' + el);
-                    val.val = obj.data[el];
-                    if (obj.rssi) val.cul_rssi = obj.rssi;
-                    if (obj.device) val.cul_device = obj.device;
-                    log.debug('>', topic, val);
-                    mqtt.publish(topic, JSON.stringify(val), {retain: true});
-                }
+                    payload.val = obj.data[el];
+                    if (obj.rssi) {
+                        payload.cul.rssi = obj.rssi;
+                    }
+                    if (obj.device) {
+                        payload.cul.device = obj.device;
+                    }
+                    log.debug('>', topic, payload);
+                    mqtt.publish(topic, JSON.stringify(payload), {retain: true});
+                });
                 break;
 
             case 'FS20':
                 topic = prefix + map('FS20/' + obj.address);
-                val.val = obj.data.cmdRaw;
-                val.cul_fs20 = obj.data;
-                if (obj.rssi) val.cul_rssi = obj.rssi;
-                if (obj.device) val.cul_device = obj.device;
-                log.debug('>', topic, val.val, val.cul_fs20.cmd);
-                mqtt.publish(topic, JSON.stringify(val), {retain: false});
+                payload.val = obj.data.cmdRaw;
+                payload.cul.fs20 = obj.data;
+                if (obj.rssi) {
+                    payload.cul.rssi = obj.rssi;
+                }
+                if (obj.device) {
+                    payload.cul.device = obj.device;
+                }
+                log.debug('>', topic, payload.val, payload.cul.fs20.cmd);
+                mqtt.publish(topic, JSON.stringify(payload), {retain: false});
                 break;
 
             default:
                 log.warn('unknown protocol', obj.protocol);
         }
     }
+
+    cul.on('close', () => {
+        culConnected = false;
+        mqtt.publish(config.name + '/connected', '1', {retain: true});
+    });
 });

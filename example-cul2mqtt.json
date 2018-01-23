@@ -1,0 +1,17 @@
+{
+  "EM/0205": "Leistung Spülmaschine",
+  "EM/0206": "Leistung Trockner",
+  "EM/0309": "Gaszähler",
+  "FS20/6C4800": "Klingel",
+  "FS20/B33100": "RC8:1",
+  "FS20/B33101": "RC8:2",
+  "FS20/B33102": "RC8:3",
+  "FS20/B33103": "RC8:4",
+  "FS20/446000": "Gastherme Brenner",
+  "FS20/446001": "Gastherme Brenner",
+  "WS/1/temperature": "Temperatur Wohnzimmer",
+  "WS/1/humidity": "Luftfeuchte Wohnzimmer",
+  "WS/4/temperature": "Temperatur Garten",
+  "WS/4/humidity": "Luftfeuchte Garten",
+  "HMS/A5E3/temperature": "Temperatur Aquarium"
+}
