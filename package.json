@@ -1,8 +1,8 @@
 {
   "name": "cul2mqtt",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "dependencies": {
-    "cul": "^0.6.3",
+    "cul": "^0.7.1",
     "mqtt": "^2.15.1",
     "yalm": "^4.1.0",
     "yargs": "^11.0.0"
