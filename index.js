@@ -22,12 +22,20 @@ log.info(pkg.name, pkg.version, 'starting');
 log.info('mqtt trying to connect', config.url);
 const mqtt = Mqtt.connect(config.url, {will: {topic: config.name + '/connected', payload: '0', retain: true}});
 
+function mqttPub(topic, payload, options) {
+    if (typeof payload !== 'string') {
+        payload = JSON.stringify(payload);
+    }
+    log.debug('mqtt >', topic, payload);
+    mqtt.publish(topic, payload, options);
+}
+
 const cul = new Cul({
     serialport: config.serialport,
     mode: config.culMode
 });
 
-mqtt.publish(config.name + '/connected', culConnected ? '2' : '1', {retain: true});
+mqttPub(config.name + '/connected', culConnected ? '2' : '1', {retain: true});
 
 mqtt.on('connect', () => {
     mqttConnected = true;
@@ -49,11 +57,11 @@ mqtt.on('error', () => {
 cul.on('ready', () => {
     log.info('cul ready');
     culConnected = true;
-    mqtt.publish(config.name + '/connected', '2', {retain: true});
+    mqttPub(config.name + '/connected', '2', {retain: true});
 });
 
 cul.on('data', (raw, obj) => {
-    log.debug('<', raw, obj);
+    log.debug('<', raw, JSON.stringify(obj));
 
     const prefix = config.name + '/status/';
     let topic;
@@ -75,7 +83,7 @@ cul.on('data', (raw, obj) => {
                     payload.cul.device = obj.device;
                 }
                 log.debug('>', topic, payload);
-                mqtt.publish(topic, JSON.stringify(payload), {retain: true});
+                mqttPub(topic, payload, {retain: true});
                 break;
 
             case 'HMS':
@@ -90,7 +98,7 @@ cul.on('data', (raw, obj) => {
                         payload.cul.device = obj.device;
                     }
                     log.debug('>', topic, payload);
-                    mqtt.publish(topic, JSON.stringify(payload), {retain: true});
+                    mqttPub(topic, payload, {retain: true});
                 });
                 break;
 
@@ -105,7 +113,7 @@ cul.on('data', (raw, obj) => {
                     payload.cul.device = obj.device;
                 }
                 log.debug('>', topic, payload.val, payload.cul.fs20.cmd);
-                mqtt.publish(topic, JSON.stringify(payload), {retain: false});
+                mqttPub(topic, payload, {retain: false});
                 break;
 
             default:
@@ -116,5 +124,5 @@ cul.on('data', (raw, obj) => {
 
 cul.on('close', () => {
     culConnected = false;
-    mqtt.publish(config.name + '/connected', '1', {retain: true});
+    mqttPub(config.name + '/connected', '1', {retain: true});
 });
