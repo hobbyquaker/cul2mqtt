@@ -45,7 +45,7 @@ Options:
 
 [Licensed under GPLv2](LICENSE)
 
-Copyright (c) 2015, 2016 hobbyquaker <hq@ccu.io>
+Copyright (c) 2015, 2016 hobbyquaker <hobbyquaker@gmail.com>
 
 [gpl-badge]: https://img.shields.io/badge/License-GPL-blue.svg?style=flat
 [gpl-url]: LICENSE
