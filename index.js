@@ -1,128 +1,200 @@
 #!/usr/bin/env node
 
-const Mqtt = require('mqtt');
-const Cul = require('cul');
-const log = require('yalm');
-const pkg = require('./package.json');
-const config = require('./config.js');
+import fs from 'node:fs';
+import path from 'node:path';
+import Cul from 'cul';
+import {createAdapter} from 'mqtt-interfaces-core';
+import config from './config.js';
+import pkg from './package.json' with {type: 'json'};
+import {itemsFor, mapItem} from './lib/items.js';
+import {commandFor} from './lib/commands.js';
+import {discoveryModel} from './lib/hadiscovery.js';
+import {handle as handleInstall} from './lib/install.js';
 
-const topicMap = require(config.mapFile);
+handleInstall(config);
 
-function map(topic) {
-    return topicMap[topic] || topic;
+const RECONNECT_MS = 10000;
+
+let map;
+if (config.mapFile) {
+    const file = path.resolve(config.mapFile);
+    map = JSON.parse(fs.readFileSync(file, 'utf8'));
 }
 
-let mqttConnected;
-let culConnected;
+/** items seen so far (published name → last value) for discovery */
+const seen = new Map();
+let discoveryTimer = null;
+let cul = null;
+let lastError = null;
 
-log.setLevel(config.verbosity);
+const culLabel = config.host ? `${config.host}:${config.port}` : config.serialport;
 
-log.info(pkg.name, pkg.version, 'starting');
+const adapter = createAdapter({
+    pkg,
+    config,
+    deviceLabel: 'cul',
+    info: {cul: culLabel, mode: config.culMode},
+    discovery: () => discoveryModel({name: config.name, items: seen, jsonPayloads: config.jsonPayloads}),
+    onSet: handleSet,
+    onShutdown: () => {
+        if (!cul) {
+            return;
+        }
+        // close() stops the reconnect loop; do not wait forever for an unplugged device
+        return Promise.race([cul.close(), new Promise((resolve) => setTimeout(resolve, 1000))]).catch(() => {});
+    },
+});
+const {log, pubStatus} = adapter;
 
-log.info('mqtt trying to connect', config.url);
-const mqtt = Mqtt.connect(config.url, {will: {topic: config.name + '/connected', payload: '0', retain: true}});
+/*
+ * set handling
+ */
 
-function mqttPub(topic, payload, options) {
-    if (typeof payload !== 'string') {
-        payload = JSON.stringify(payload);
+async function handleSet(parts, value, topic) {
+    if (value === undefined) {
+        log.warn('mqtt ignoring empty payload on', topic);
+        return;
     }
-    log.debug('mqtt >', topic, payload);
-    mqtt.publish(topic, payload, options);
+    let command;
+    try {
+        command = commandFor(parts, value, {rawSet: config.rawSet});
+    } catch (err) {
+        log.warn('mqtt set', parts.join('/'), String(value), '-', err.message);
+        return;
+    }
+    if (!cul || !cul.connected) {
+        throw new Error('cul not connected');
+    }
+    switch (command.type) {
+        case 'fs20':
+            log.debug('cul > FS20', command.housecode, command.address, command.cmd, command.time);
+            return cul.cmd('FS20', command.housecode, command.address, command.cmd, command.time);
+        case 'fht':
+            if (!config.fhtCentral) {
+                throw new Error('set/fht needs --fht-central');
+            }
+            log.debug('cul > FHT', config.fhtCentral, command.device, command.cmd, command.value);
+            return cul.cmd('FHT', config.fhtCentral, command.device, command.cmd, command.value);
+        case 'raw':
+            log.debug('cul > raw', command.data);
+            return cul.write(command.data);
+        default:
+            throw new Error('unhandled command type ' + command.type);
+    }
 }
 
-const cul = new Cul({
-    serialport: config.serialport,
-    mode: config.culMode
-});
+/*
+ * CUL — the cul library reconnects by itself (every RECONNECT_MS); we only mirror its state
+ */
 
-mqttPub(config.name + '/connected', culConnected ? '2' : '1', {retain: true});
-
-mqtt.on('connect', () => {
-    mqttConnected = true;
-    log.info('mqtt connected ' + config.url);
-    mqtt.subscribe(config.prefix + '/set/#');
-});
-
-mqtt.on('close', () => {
-    if (mqttConnected) {
-        mqttConnected = false;
-        log.info('mqtt closed ' + config.url);
-    }
-});
-
-mqtt.on('error', () => {
-    log.error('mqtt error ' + config.url);
-});
-
-cul.on('ready', () => {
-    log.info('cul ready');
-    culConnected = true;
-    mqttPub(config.name + '/connected', '2', {retain: true});
-});
-
-cul.on('data', (raw, obj) => {
-    log.debug('<', raw, JSON.stringify(obj));
-
-    const prefix = config.name + '/status/';
-    let topic;
-    const payload = {
-        ts: new Date().getTime(),
-        cul: {}
+function culOptions() {
+    const options = {
+        mode: config.culMode,
+        coc: config.coc,
+        scc: config.scc,
+        reconnect: RECONNECT_MS,
+        logger: (...args) => log.debug('cul', ...args),
     };
-
-    if (obj && obj.protocol && obj.data) {
-        switch (obj.protocol) {
-            case 'EM':
-                topic = prefix + map(obj.protocol + '/' + obj.address);
-                payload.val = obj.data.current;
-                payload.cul.em = obj.data;
-                if (obj.rssi) {
-                    payload.cul.rssi = obj.rssi;
-                }
-                if (obj.device) {
-                    payload.cul.device = obj.device;
-                }
-                log.debug('>', topic, payload);
-                mqttPub(topic, payload, {retain: true});
-                break;
-
-            case 'HMS':
-            case 'WS':
-                Object.keys(obj.data).forEach(el => {
-                    topic = prefix + map(obj.protocol + '/' + obj.address + '/' + el);
-                    payload.val = obj.data[el];
-                    if (obj.rssi) {
-                        payload.cul.rssi = obj.rssi;
-                    }
-                    if (obj.device) {
-                        payload.cul.device = obj.device;
-                    }
-                    log.debug('>', topic, payload);
-                    mqttPub(topic, payload, {retain: true});
-                });
-                break;
-
-            case 'FS20':
-                topic = prefix + map('FS20/' + obj.address);
-                payload.val = obj.data.cmdRaw;
-                payload.cul.fs20 = obj.data;
-                if (obj.rssi) {
-                    payload.cul.rssi = obj.rssi;
-                }
-                if (obj.device) {
-                    payload.cul.device = obj.device;
-                }
-                log.debug('>', topic, payload.val, payload.cul.fs20.cmd);
-                mqttPub(topic, payload, {retain: false});
-                break;
-
-            default:
-                log.warn('unknown protocol', obj.protocol);
+    if (config.host) {
+        options.connectionMode = 'telnet';
+        options.host = config.host;
+        options.port = config.port;
+    } else {
+        options.serialport = config.serialport;
+        if (config.baudrate) {
+            options.baudrate = config.baudrate;
         }
     }
-});
+    return options;
+}
 
-cul.on('close', () => {
-    culConnected = false;
-    mqttPub(config.name + '/connected', '1', {retain: true});
-});
+function connect() {
+    log.debug('cul connecting', culLabel);
+    cul = new Cul(culOptions());
+
+    cul.on('ready', () => {
+        lastError = null;
+        log.info('cul ready', culLabel);
+        adapter.setDeviceConnected(true);
+    });
+
+    cul.on('data', onData);
+
+    cul.on('close', () => {
+        if (adapter.shuttingDown) {
+            return;
+        }
+        if (adapter.deviceConnected) {
+            log.warn('cul disconnected', culLabel, '- reconnecting every', RECONNECT_MS / 1000, 's');
+            adapter.setDeviceConnected(false);
+        }
+    });
+
+    cul.on('error', (err) => {
+        const msg = (err && err.message) || String(err);
+        if (adapter.shuttingDown) {
+            log.debug('cul', msg);
+            return;
+        }
+        // repeated identical errors (device unplugged, every reconnect attempt) are logged once
+        if (msg !== lastError) {
+            log.warn('cul', msg);
+            lastError = msg;
+        }
+        adapter.setDeviceConnected(false);
+    });
+}
+
+function onData(raw, obj) {
+    log.debug('cul <', raw, obj && obj.protocol ? JSON.stringify(obj) : '');
+    if (config.publishRaw) {
+        adapter.publish(adapter.topic('raw'), raw, {retain: false});
+    }
+    if (!obj || !obj.protocol) {
+        return;
+    }
+    if (obj.unknown) {
+        log.debug('cul no parser for', obj.protocol, raw);
+        return;
+    }
+    const items = itemsFor(obj);
+    if (items.length === 0) {
+        if (obj.address !== undefined) {
+            log.debug(
+                'cul nothing to publish for',
+                obj.protocol,
+                obj.address,
+                obj.data && obj.data.error ? obj.data.error : '',
+            );
+        }
+        return;
+    }
+    let newItems = false;
+    for (const {item, val, retain} of items) {
+        const name = mapItem(item, map);
+        if (!seen.has(name)) {
+            newItems = true;
+            log.info('cul new item', name, obj.device ? `(${obj.device})` : '');
+        }
+        seen.set(name, {val, retain, raw: item, device: obj.device});
+        pubStatus(name, val, {retain});
+    }
+    if (newItems) {
+        scheduleDiscovery();
+    }
+}
+
+/** Devices announce themselves over time; coalesce discovery updates. */
+function scheduleDiscovery() {
+    if (discoveryTimer) {
+        return;
+    }
+    discoveryTimer = setTimeout(() => {
+        discoveryTimer = null;
+        adapter.markDiscoveryDirty();
+        adapter.publishDiscovery();
+    }, 2000);
+}
+
+adapter.start();
+connect();

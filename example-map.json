@@ -1,0 +1,9 @@
+{
+  "EM/0205": "power_dishwasher",
+  "EM/0309": "gas_meter",
+  "FS20/6C4800": "doorbell",
+  "FS20/B33100": "remote_1",
+  "WS/1": "living_room",
+  "WS/4/temperature": "garden_temperature",
+  "HMS/A5E3/temperature": "aquarium_temperature"
+}

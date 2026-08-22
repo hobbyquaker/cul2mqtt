@@ -1,56 +1,66 @@
 {
   "name": "cul2mqtt",
-  "version": "0.1.3",
-  "dependencies": {
-    "cul": "^0.7.1",
-    "mqtt": "^2.15.1",
-    "yalm": "^4.1.0",
-    "yargs": "^11.0.0"
-  },
-  "engines": {
-    "node": ">=6.0.0"
-  },
-  "engineStrict": true,
-  "description": "Interface between Busware CUL and MQTT",
+  "version": "1.0.0",
+  "description": "Interface between Busware CUL (FS20, EM, HMS, S300TH, FHT, MAX!, ...) and MQTT, with Home Assistant discovery",
+  "type": "module",
   "main": "index.js",
   "preferGlobal": true,
   "bin": {
-    "cul2mqtt": "./index.js"
+    "cul2mqtt": "index.js"
   },
-  "devDependencies": {
-    "camo-purge": "latest",
-    "cul": "^0.7.0",
-    "xo": "latest"
+  "files": [
+    "index.js",
+    "config.js",
+    "lib/",
+    "example-map.json"
+  ],
+  "engines": {
+    "node": "^20.19 || ^22.12 || >=24"
   },
   "scripts": {
-    "test": "camo-purge ; xo"
+    "start": "node index.js",
+    "lint": "eslint . && prettier --check .",
+    "format": "prettier --write . && eslint --fix .",
+    "test": "node --test",
+    "test:watch": "node --test --watch",
+    "deploy": "bash deploy.sh"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/hobbyquaker/cul2mqtt"
+    "url": "git+https://github.com/hobbyquaker/cul2mqtt.git"
   },
   "keywords": [
+    "mqtt",
+    "smarthome",
+    "mqtt-smarthome",
+    "home-automation",
+    "home-assistant",
     "CUL",
     "Busware",
+    "culfw",
     "FS20",
     "EM1000",
     "HMS",
-    "ELV",
-    "868",
-    "RF",
-    "Smarthome",
-    "MQTT"
+    "S300TH",
+    "FHT",
+    "MAX",
+    "868"
   ],
-  "author": {
-    "name": "Sebastian 'hobbyquaker' Raff",
-    "email": "hobbyquaker@gmail.com"
-  },
+  "author": "Sebastian Raff <hobbyquaker@gmail.com> (https://hobbyquaker.github.io)",
   "license": "GPL-2.0",
   "bugs": {
     "url": "https://github.com/hobbyquaker/cul2mqtt/issues"
   },
   "homepage": "https://github.com/hobbyquaker/cul2mqtt",
-  "xo": {
-    "space": 4
+  "dependencies": {
+    "cul": "file:../cul",
+    "mqtt-interfaces-core": "file:../mqtt-interfaces-core"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.0.0",
+    "eslint": "^9.0.0",
+    "eslint-config-prettier": "^10.0.0",
+    "globals": "^16.0.0",
+    "prettier": "^3.0.0"
   }
 }
