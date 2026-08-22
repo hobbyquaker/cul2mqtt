@@ -53,8 +53,8 @@
   },
   "homepage": "https://github.com/hobbyquaker/cul2mqtt",
   "dependencies": {
-    "cul": "file:../cul",
-    "mqtt-interfaces-core": "file:../mqtt-interfaces-core"
+    "cul": "^1.0.0",
+    "mqtt-interfaces-core": "^0.2.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.0.0",

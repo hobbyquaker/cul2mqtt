@@ -45,9 +45,10 @@ major release.
 
 ## Known weak spots
 
-- `cul` 1.0 (ESM, serialport 13, built-in reconnect) is consumed via `file:../cul` until it is on
-  npm; `deploy.sh` ships every `file:` dependency as a tarball. Its `error` is always followed by
-  `close` and a reconnect; `close()` stops the loop.
+- `cul` 1.0 (ESM, serialport 13, built-in reconnect): its `error` is always followed by `close`
+  and a reconnect; `close()` stops the loop. To work against an unreleased sibling checkout, set
+  the dep to `file:../cul` (or `file:../mqtt-interfaces-core`) — `deploy.sh` ships every `file:`
+  dependency as a tarball.
 - `itemsFor()` is generic over the parser output; new protocols may publish meta fields until
   added to `SKIP`. `data.error` (parse failure) and `unknown: true` (no parser) messages are dropped.
 - Nothing in the set path is verified on hardware yet except what the `cul` README documents.
