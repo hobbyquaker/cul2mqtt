@@ -39,7 +39,7 @@ export const OPTIONS = {
     },
     'learn-intervals': {
         type: 'boolean',
-        describe: 'learn per-device transmit intervals (EM, WS) for tighter offline timeouts',
+        describe: 'widen offline timeouts from observed per-device message gaps',
         default: true,
     },
     'state-dir': {

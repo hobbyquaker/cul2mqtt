@@ -37,40 +37,42 @@ describe('OfflineTracker', () => {
         assert.equal(tracker.seen('em/0206', 3300 + SEEDS.em).changed, false);
     });
 
-    test('learns the interval for WS/EM after 3 gaps: median x 3', () => {
+    test('learning only widens: fast clean devices keep the protocol default', () => {
         const tracker = new OfflineTracker();
         for (const t of [0, 150, 300, 450, 600]) {
             tracker.seen('ws/1', t);
         }
-        assert.equal(tracker.timeoutFor('ws/1'), 450);
-        // a single outlier gap does not poison the median
-        tracker.seen('ws/1', 600 + 7200);
-        assert.equal(tracker.timeoutFor('ws/1'), 450);
+        // median 150 x 3 = 450 and max gap 150 x 1.5 = 225 are both tighter than the default
+        assert.equal(tracker.timeoutFor('ws/1'), SEEDS.ws);
     });
 
-    test('learned timeouts are floored, RF repeats within 5s are not gaps', () => {
+    test('learning widens for slow devices (median x 3) and lossy ones (max gap x 1.5)', () => {
         const tracker = new OfflineTracker();
-        for (const t of [0, 2, 30, 32, 60, 90]) {
-            tracker.seen('ws/2', t);
+        for (const t of [0, 900, 1800, 2700, 3600]) {
+            tracker.seen('em/0309', t);
         }
-        // gaps of 2s ignored; 28..30s gaps learn 120s (floor), not ~90s
-        assert.equal(tracker.timeoutFor('ws/2'), 120);
+        assert.equal(tracker.timeoutFor('em/0309'), 2700);
+        const lossy = new OfflineTracker();
+        for (const t of [0, 150, 300, 1800, 1950, 2100]) {
+            lossy.seen('ws/2', t);
+        }
+        // one observed 1500s outage: 1500 x 1.5 = 2250 beats median 150 x 3 and the 1800s default
+        assert.equal(lossy.timeoutFor('ws/2'), 2250);
     });
 
-    test('seed until enough gaps; no learning for HMS/FHT or with learn: false', () => {
+    test('default until enough gaps, RF repeats within 5s are not gaps, learn: false disables', () => {
         const tracker = new OfflineTracker();
         tracker.seen('ws/3', 0);
-        tracker.seen('ws/3', 150);
+        tracker.seen('ws/3', 2);
+        tracker.seen('ws/3', 900);
+        tracker.seen('ws/3', 1800);
+        // the 2s repeat is not a gap, so only 2 gaps were seen: still the default
         assert.equal(tracker.timeoutFor('ws/3'), SEEDS.ws);
-        for (const t of [0, 100, 200, 300, 400]) {
-            tracker.seen('hms/A5E3', t);
-        }
-        assert.equal(tracker.timeoutFor('hms/A5E3'), SEEDS.hms);
         const off = new OfflineTracker({learn: false});
-        for (const t of [0, 150, 300, 450, 600]) {
-            off.seen('ws/1', t);
+        for (const t of [0, 900, 1800, 2700, 3600]) {
+            off.seen('em/0309', t);
         }
-        assert.equal(off.timeoutFor('ws/1'), SEEDS.ws);
+        assert.equal(off.timeoutFor('em/0309'), SEEDS.em);
     });
 
     test('explicit timeout wins and disables learning, 0 disables the device', () => {
@@ -90,13 +92,13 @@ describe('OfflineTracker', () => {
 
     test('state roundtrip keeps learned gaps and flags stale devices offline', () => {
         const tracker = new OfflineTracker();
-        for (const t of [0, 150, 300, 450, 600]) {
-            tracker.seen('ws/1', t);
+        for (const t of [0, 900, 1800, 2700, 3600]) {
+            tracker.seen('em/0309', t);
         }
         const restored = new OfflineTracker();
         restored.load(JSON.parse(JSON.stringify(tracker.state())));
-        assert.equal(restored.timeoutFor('ws/1'), 450);
-        assert.deepEqual(restored.check(600 + 451), ['ws/1']);
-        assert.deepEqual(restored.check(600 + 452), []);
+        assert.equal(restored.timeoutFor('em/0309'), 2700);
+        assert.deepEqual(restored.check(3600 + 2701), ['em/0309']);
+        assert.deepEqual(restored.check(3600 + 2702), []);
     });
 });

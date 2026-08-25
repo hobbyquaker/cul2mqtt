@@ -42,8 +42,9 @@ See CHANGELOG.md. Decisions:
 - [ ] Device discovery (`--discover`, B-2): list serial ports with a CUL (USB VID/PID 03EB:204B) and
       `V` version probe (cul 1.0 parses the answer as `{protocol: 'culfw'}`).
 - [x] Device offline detection — done in 1.1.0 (see CHANGELOG and README): retained
-      `<protocol>/<address>/online` when a device stays silent past its timeout; per-protocol seeds
-      (~3 missed cycles), self-learned intervals for EM/WS (`--no-learn-intervals`), explicit
+      `<protocol>/<address>/online` when a device stays silent past its timeout; lenient
+      per-protocol defaults (revised in 1.1.1 — SlowRF loses whole strings of transmissions, so
+      learned timeouts only widen, never tighten; `--no-learn-intervals`), explicit
       map-file `timeout` wins (`0` disables), persisted in `--state-dir`, wired into HA discovery
       as per-device availability (core 0.3.0 `availability`). Prior art researched 2026-08-25: FHEM
       has this built in only for HomeMatic (ActionDetector, per-device `actCycle`, default 600 s),

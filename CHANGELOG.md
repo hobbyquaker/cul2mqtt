@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.1.1
+
+### Fixed
+
+- Offline detection fired too early: an S300TH at the edge of range routinely loses 10+ minutes
+  of transmissions, so a WS device was marked offline after the 10 min default. Per-protocol
+  defaults are now lenient (EM, WS, HMS 30 min, FHT 60 min) and self-learned timeouts only ever
+  _widen_ them (median of recent gaps × 3 or largest recent gap × 1.5, whichever is larger) —
+  learning adapts to devices that send slower or lose more than expected instead of tightening
+  the timeout below the default.
+
 ## 1.1.0
 
 ### Added

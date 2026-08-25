@@ -40,7 +40,7 @@ raw traffic (`cul <` / `cul >`).
 | `-m, --map-file`                     |                    | JSON file with friendly item names (see below)                                   |
 | `--fht-central`                      |                    | FHT central code (4 hex digits), required for `cul/set/fht`                      |
 | `--offline-detection`                | on                 | mark silent devices offline on `cul/status/<protocol>/<address>/online`          |
-| `--learn-intervals`                  | on                 | learn per-device transmit intervals (EM, WS) for tighter offline timeouts        |
+| `--learn-intervals`                  | on                 | widen offline timeouts from observed per-device message gaps                     |
 | `--state-dir`                        | `$STATE_DIRECTORY` | directory for persisted state (learned intervals); set by systemd                |
 | `--publish-raw`                      | off                | additionally publish every raw culfw line on `cul/raw`                           |
 | `--raw-set`                          | off                | accept raw culfw commands on `cul/set/raw` (see below)                           |
@@ -164,10 +164,12 @@ order of precedence:
 
 1. an explicit `timeout` (seconds) in the map file object value — always wins, disables interval
    learning for that device; `0` turns detection off for the device.
-2. self-learned for the cyclic senders EM and WS (median of the recent message gaps × 3, at least
-   2 minutes) — disable globally with `--no-learn-intervals`.
-3. a per-protocol default of about 3 missed transmit cycles: EM 15 min, WS 10 min, HMS 15 min,
-   FHT 30 min.
+2. self-learned from the observed message gaps — only ever _wider_ than the protocol default
+   (median of the recent gaps × 3, or the largest recent gap × 1.5, whichever is larger), so
+   devices that send slower or lose more messages than expected don't flap. Disable with
+   `--no-learn-intervals`.
+3. a lenient per-protocol default: EM, WS and HMS 30 min, FHT 60 min. SlowRF reception routinely
+   loses several transmissions in a row, so a missed cycle or three is normal, not offline.
 
 Event-only protocols (FS20 remotes ring when someone presses them, not on a schedule) are never
 marked offline unless a map file `timeout` opts them in. Learned intervals and last-seen times are
