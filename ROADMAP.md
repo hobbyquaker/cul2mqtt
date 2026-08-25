@@ -41,3 +41,19 @@ See CHANGELOG.md. Decisions:
       persisted rolling codes, Hoermann, UNIRoll) as `set/<protocol>/...`.
 - [ ] Device discovery (`--discover`, B-2): list serial ports with a CUL (USB VID/PID 03EB:204B) and
       `V` version probe (cul 1.0 parses the answer as `{protocol: 'culfw'}`).
+- [ ] Device offline detection: mark a device offline when it stays silent longer than its expected
+      transmit interval allows. Prior art: FHEM only has this built in for HomeMatic
+      (ActionDetector, per-device `actCycle` attribute, default 600 s); for everything else
+      (CUL_WS, CUL_EM, FHT) users wire a manual `watchdog` per device — no real device-type
+      knowledge. zigbee2mqtt's availability feature uses two coarse classes (active 10 min /
+      passive 25 h) plus per-device override. Proposed design:
+      - Timeout = 3 missed cycles, seeded per protocol (coarse type knowledge is per *protocol*
+        here, not per model): EM 5 min → 15 min, WS/S300TH ~3 min → 10 min, HMS → 15 min,
+        FHT → 30 min. Optionally refine by learning the actual interval at runtime (median of
+        recent gaps × 3). FS20 and other event-only protocols excluded (remotes send rarely) —
+        opt-in via map file only.
+      - Override per device in the map file once it takes object values (see HA-hints item above):
+        `{"name": "Trockner", "timeout": 900}`, `"timeout": 0` disables.
+      - Publish retained `<protocol>/<address>/online` (0/1); HA discovery adds it as a per-device
+        availability topic alongside `<name>/connected` (`avty_mode: all`) — exactly what
+        mqtt-interfaces-core 0.3.0 `availability` + `clearStatus()` were built for.
