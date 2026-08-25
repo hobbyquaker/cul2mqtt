@@ -49,11 +49,15 @@ See CHANGELOG.md. Decisions:
       passive 25 h) plus per-device override. Proposed design:
       - Timeout = 3 missed cycles, seeded per protocol (coarse type knowledge is per *protocol*
         here, not per model): EM 5 min → 15 min, WS/S300TH ~3 min → 10 min, HMS → 15 min,
-        FHT → 30 min. Optionally refine by learning the actual interval at runtime (median of
-        recent gaps × 3). FS20 and other event-only protocols excluded (remotes send rarely) —
+        FHT → 30 min. FS20 and other event-only protocols excluded (remotes send rarely) —
         opt-in via map file only.
+      - **Self-learning** refines the seed per device (at least for the cyclic senders EM and WS):
+        median of recent message gaps × 3, floored by sane minimums. Default **on**; a config
+        option (`--no-learn-intervals`) disables it globally. Learned intervals live in the state
+        dir, not the map file.
       - Override per device in the map file once it takes object values (see HA-hints item above):
-        `{"name": "Trockner", "timeout": 900}`, `"timeout": 0` disables.
+        `{"name": "Trockner", "timeout": 900}`, `"timeout": 0` disables. An explicit `timeout`
+        always wins and turns self-learning off for that device.
       - Publish retained `<protocol>/<address>/online` (0/1); HA discovery adds it as a per-device
         availability topic alongside `<name>/connected` (`avty_mode: all`) — exactly what
         mqtt-interfaces-core 0.3.0 `availability` + `clearStatus()` were built for.
