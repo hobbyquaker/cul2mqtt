@@ -32,6 +32,21 @@ export const OPTIONS = {
         type: 'string',
         describe: 'FHT central code (4 hex digits) needed to send set/fht commands',
     },
+    'offline-detection': {
+        type: 'boolean',
+        describe: 'mark silent devices offline on <protocol>/<address>/online (see README)',
+        default: true,
+    },
+    'learn-intervals': {
+        type: 'boolean',
+        describe: 'learn per-device transmit intervals (EM, WS) for tighter offline timeouts',
+        default: true,
+    },
+    'state-dir': {
+        type: 'string',
+        describe: 'directory for persisted state, e.g. learned intervals (default: $STATE_DIRECTORY)',
+        default: process.env.STATE_DIRECTORY,
+    },
     'publish-raw': {
         type: 'boolean',
         describe: 'additionally publish every raw culfw line on <name>/raw (not retained)',

@@ -23,7 +23,7 @@ set -euo pipefail
 #   sudo cul2mqtt --install -n cul -s /dev/ttyACM0 -u mqtt://broker
 
 PKG=cul2mqtt
-REMOTE_HOST="${1:-mqtt-ifaces}"
+REMOTE_HOST="${1:-zigbee}"
 REMOTE_DIR="${REMOTE_DIR:-/usr/local/lib/node_modules/$PKG}"
 REMOTE_TMP="${REMOTE_TMP:-/tmp}"
 SERVICE="${SERVICE:-}"

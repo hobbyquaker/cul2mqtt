@@ -39,6 +39,9 @@ raw traffic (`cul <` / `cul >`).
 | `--host`, `--port`                   | , `2323`           | CUNO / CUNO2 via telnet instead of a serial port                                 |
 | `-m, --map-file`                     |                    | JSON file with friendly item names (see below)                                   |
 | `--fht-central`                      |                    | FHT central code (4 hex digits), required for `cul/set/fht`                      |
+| `--offline-detection`                | on                 | mark silent devices offline on `cul/status/<protocol>/<address>/online`          |
+| `--learn-intervals`                  | on                 | learn per-device transmit intervals (EM, WS) for tighter offline timeouts        |
+| `--state-dir`                        | `$STATE_DIRECTORY` | directory for persisted state (learned intervals); set by systemd                |
 | `--publish-raw`                      | off                | additionally publish every raw culfw line on `cul/raw`                           |
 | `--raw-set`                          | off                | accept raw culfw commands on `cul/set/raw` (see below)                           |
 | `-u, --mqtt-url`                     | `mqtt://localhost` | broker URL, see [MQTT.js](https://github.com/mqttjs/MQTT.js#connect-using-a-url) |
@@ -150,6 +153,27 @@ replaces the matched part:
 `cul/status/living_room/temperature`, `cul/status/garden_temperature`. See
 [example-map.json](example-map.json).
 
+A value may also be an object: `{"name": "power_dryer", "timeout": 900}` — `name` renames as
+above, `timeout` sets the offline detection timeout in seconds for that device (see below).
+
+### `cul/status/<protocol>/<address>/online`
+
+Retained, `1`/`0`. Offline detection (on by default, `--no-offline-detection` disables it): a
+device that stays silent longer than its timeout is marked offline. The timeout per device is, in
+order of precedence:
+
+1. an explicit `timeout` (seconds) in the map file object value — always wins, disables interval
+   learning for that device; `0` turns detection off for the device.
+2. self-learned for the cyclic senders EM and WS (median of the recent message gaps × 3, at least
+   2 minutes) — disable globally with `--no-learn-intervals`.
+3. a per-protocol default of about 3 missed transmit cycles: EM 15 min, WS 10 min, HMS 15 min,
+   FHT 30 min.
+
+Event-only protocols (FS20 remotes ring when someone presses them, not on a schedule) are never
+marked offline unless a map file `timeout` opts them in. Learned intervals and last-seen times are
+persisted in `--state-dir` (systemd sets `$STATE_DIRECTORY=/var/lib/cul2mqtt/<name>`; without a
+state dir learning starts over on restart).
+
 ### `cul/set/fs20/<address>`
 
 Sends an FS20 command. `<address>` is housecode + address as 6 hex digits (`6C4800`) or
@@ -206,7 +230,8 @@ booleans like `open` or `battery_low` become binary sensors) and the
 manufacturer/model derived from the protocol (`ELV S300TH`, `ELV EM1000`, `ELV FHT80b`, `eQ-3 MAX!`,
 ...). The devices are linked to the CUL itself, which appears as a bridge device with a
 _Connected_ diagnostic. Devices are announced as they show up on air (each address has to send
-once); availability follows `cul/connected`.
+once); availability follows `cul/connected` — and, with offline detection (the default), the
+per-device `online` item: a device that stops sending becomes _unavailable_ in HA on its own.
 
 FS20 is receive-only for the CUL, so actuators cannot be discovered and no switches are created
 automatically; an FS20 remote appears as a device with one sensor holding the last command.

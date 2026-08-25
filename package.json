@@ -1,6 +1,6 @@
 {
   "name": "cul2mqtt",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "Interface between Busware CUL (FS20, EM, HMS, S300TH, FHT, MAX!, ...) and MQTT, with Home Assistant discovery",
   "type": "module",
   "main": "index.js",

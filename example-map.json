@@ -1,5 +1,6 @@
 {
   "EM/0205": "power_dishwasher",
+  "EM/0206": {"name": "power_dryer", "timeout": 900},
   "EM/0309": "gas_meter",
   "FS20/6C4800": "doorbell",
   "FS20/B33100": "remote_1",

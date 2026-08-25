@@ -41,23 +41,12 @@ See CHANGELOG.md. Decisions:
       persisted rolling codes, Hoermann, UNIRoll) as `set/<protocol>/...`.
 - [ ] Device discovery (`--discover`, B-2): list serial ports with a CUL (USB VID/PID 03EB:204B) and
       `V` version probe (cul 1.0 parses the answer as `{protocol: 'culfw'}`).
-- [ ] Device offline detection: mark a device offline when it stays silent longer than its expected
-      transmit interval allows. Prior art: FHEM only has this built in for HomeMatic
-      (ActionDetector, per-device `actCycle` attribute, default 600 s); for everything else
-      (CUL_WS, CUL_EM, FHT) users wire a manual `watchdog` per device — no real device-type
-      knowledge. zigbee2mqtt's availability feature uses two coarse classes (active 10 min /
-      passive 25 h) plus per-device override. Proposed design:
-      - Timeout = 3 missed cycles, seeded per protocol (coarse type knowledge is per *protocol*
-        here, not per model): EM 5 min → 15 min, WS/S300TH ~3 min → 10 min, HMS → 15 min,
-        FHT → 30 min. FS20 and other event-only protocols excluded (remotes send rarely) —
-        opt-in via map file only.
-      - **Self-learning** refines the seed per device (at least for the cyclic senders EM and WS):
-        median of recent message gaps × 3, floored by sane minimums. Default **on**; a config
-        option (`--no-learn-intervals`) disables it globally. Learned intervals live in the state
-        dir, not the map file.
-      - Override per device in the map file once it takes object values (see HA-hints item above):
-        `{"name": "Trockner", "timeout": 900}`, `"timeout": 0` disables. An explicit `timeout`
-        always wins and turns self-learning off for that device.
-      - Publish retained `<protocol>/<address>/online` (0/1); HA discovery adds it as a per-device
-        availability topic alongside `<name>/connected` (`avty_mode: all`) — exactly what
-        mqtt-interfaces-core 0.3.0 `availability` + `clearStatus()` were built for.
+- [x] Device offline detection — done in 1.1.0 (see CHANGELOG and README): retained
+      `<protocol>/<address>/online` when a device stays silent past its timeout; per-protocol seeds
+      (~3 missed cycles), self-learned intervals for EM/WS (`--no-learn-intervals`), explicit
+      map-file `timeout` wins (`0` disables), persisted in `--state-dir`, wired into HA discovery
+      as per-device availability (core 0.3.0 `availability`). Prior art researched 2026-08-25: FHEM
+      has this built in only for HomeMatic (ActionDetector, per-device `actCycle`, default 600 s),
+      everything else is a manual `watchdog` per device; zigbee2mqtt uses two coarse classes
+      (active 10 min / passive 25 h) plus per-device override. Map file object values carry
+      `timeout` only so far — the HA-hints item above stays open.

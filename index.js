@@ -9,11 +9,14 @@ import pkg from './package.json' with {type: 'json'};
 import {itemsFor, mapItem} from './lib/items.js';
 import {commandFor} from './lib/commands.js';
 import {discoveryModel} from './lib/hadiscovery.js';
+import {OfflineTracker, timeoutsFromMap} from './lib/offline.js';
 import {handle as handleInstall} from './lib/install.js';
 
 handleInstall(config);
 
 const RECONNECT_MS = 10000;
+const OFFLINE_CHECK_MS = 10000;
+const STATE_SAVE_MS = 60000;
 
 let map;
 if (config.mapFile) {
@@ -37,6 +40,9 @@ const adapter = createAdapter({
     discovery: () => discoveryModel({name: config.name, items: seen, jsonPayloads: config.jsonPayloads}),
     onSet: handleSet,
     onShutdown: () => {
+        clearInterval(offlineTimer);
+        clearInterval(stateTimer);
+        saveState();
         if (!cul) {
             return;
         }
@@ -45,6 +51,59 @@ const adapter = createAdapter({
     },
 });
 const {log, pubStatus} = adapter;
+
+/*
+ * offline detection — devices that stop sending get a retained <protocol>/<address>/online item
+ */
+
+const offline = config.offlineDetection
+    ? new OfflineTracker({timeouts: timeoutsFromMap(map), learn: config.learnIntervals})
+    : null;
+const stateFile = offline && config.stateDir ? path.join(config.stateDir, 'offline.json') : null;
+let offlineTimer = null;
+let stateTimer = null;
+
+if (stateFile && fs.existsSync(stateFile)) {
+    try {
+        offline.load(JSON.parse(fs.readFileSync(stateFile, 'utf8')));
+    } catch (err) {
+        log.warn('cannot read', stateFile, '-', err.message);
+    }
+}
+
+function saveState() {
+    if (!stateFile) {
+        return;
+    }
+    try {
+        fs.mkdirSync(config.stateDir, {recursive: true});
+        fs.writeFileSync(stateFile, JSON.stringify(offline.state()));
+    } catch (err) {
+        log.warn('cannot save', stateFile, '-', err.message);
+    }
+}
+
+function publishOnline(device, online) {
+    const name = mapItem(`${device}/online`, map);
+    const isNew = !seen.has(name);
+    seen.set(name, {val: online ? 1 : 0, retain: true, raw: `${device}/online`});
+    pubStatus(name, online ? 1 : 0, {retain: true});
+    if (isNew) {
+        scheduleDiscovery();
+    }
+}
+
+if (offline) {
+    offlineTimer = setInterval(() => {
+        for (const device of offline.check(Date.now() / 1000)) {
+            log.info('cul device offline', device, `(no message for ${Math.round(offline.timeoutFor(device))}s)`);
+            publishOnline(device, false);
+        }
+    }, OFFLINE_CHECK_MS);
+    if (stateFile) {
+        stateTimer = setInterval(saveState, STATE_SAVE_MS);
+    }
+}
 
 /*
  * set handling
@@ -181,6 +240,14 @@ function onData(raw, obj) {
     }
     if (newItems) {
         scheduleDiscovery();
+    }
+    if (offline) {
+        // same device key as the items' base: protocol lower case, address verbatim
+        const device = `${String(obj.protocol).toLowerCase()}/${obj.address}`;
+        const transition = offline.seen(device, Date.now() / 1000);
+        if (transition && transition.changed) {
+            publishOnline(device, true);
+        }
     }
 }
 

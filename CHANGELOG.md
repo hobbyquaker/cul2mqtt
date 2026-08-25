@@ -1,5 +1,24 @@
 # Changelog
 
+## 1.1.0
+
+### Added
+
+- Device offline detection (on by default): a device that stays silent longer than its timeout gets
+  a retained `<protocol>/<address>/online` item (`1`/`0`). Timeouts default to ~3 missed transmit
+  cycles per protocol (EM 15 min, WS 10 min, HMS 15 min, FHT 30 min); for EM and WS the actual
+  interval is learned per device (median of recent gaps × 3, `--no-learn-intervals` disables).
+  Event-only protocols (FS20) are only monitored when opted in. `--no-offline-detection` turns the
+  feature off.
+- Map file values may be objects: `{"name": "power_dryer", "timeout": 900}` — an explicit
+  `timeout` (seconds) always wins and disables learning for that device, `0` disables detection
+  for it.
+- `--state-dir` (default `$STATE_DIRECTORY`, set by systemd): learned intervals and last-seen
+  times survive restarts.
+- Home Assistant discovery uses the `online` item as per-device availability (bridge `connected`
+  AND device `online`), so a silent device becomes _unavailable_ in HA instead of showing stale
+  values.
+
 ## 1.0.1
 
 - [mqtt-interfaces-core](https://github.com/hobbyquaker/mqtt-interfaces-core) ^0.3.0: FS20 command
