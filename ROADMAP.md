@@ -26,9 +26,9 @@ See CHANGELOG.md. Decisions:
 
 ## Open
 
-- [ ] Release 1.0.0 (tag `v1.0.0`; deps `cul ^1.0.0`, `mqtt-interfaces-core ^0.2.0` from npm).
-      For unreleased sibling work, point a dep at `file:../<dir>` — `deploy.sh` ships such deps
-      as tarballs.
+- [x] Release 1.0.0 (tag `v1.0.0`; deps `cul ^1.0.0`, `mqtt-interfaces-core ^0.2.0` from npm) —
+      done 2026-08-22 (npm, GitHub release). For unreleased sibling work, point a dep at
+      `file:../<dir>` — `deploy.sh` ships such deps as tarballs.
 - [ ] Verify on real hardware: CUL with FS20 + S300TH + EM1000 (receive), FS20 send, `--install`
       on the home server, HA entities.
 - [ ] Docker image: document `--group-add` for the serial port gid; consider `--device` hints in the

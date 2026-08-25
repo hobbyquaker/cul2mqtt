@@ -1,6 +1,6 @@
 {
   "name": "cul2mqtt",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Interface between Busware CUL (FS20, EM, HMS, S300TH, FHT, MAX!, ...) and MQTT, with Home Assistant discovery",
   "type": "module",
   "main": "index.js",
@@ -54,7 +54,7 @@
   "homepage": "https://github.com/hobbyquaker/cul2mqtt",
   "dependencies": {
     "cul": "^1.0.0",
-    "mqtt-interfaces-core": "^0.2.0"
+    "mqtt-interfaces-core": "^0.3.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.0.0",

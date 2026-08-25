@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.1
+
+- [mqtt-interfaces-core](https://github.com/hobbyquaker/mqtt-interfaces-core) ^0.3.0: FS20 command
+  events (`status/fs20/<address>`, published with `retain: false`) are no longer re-published
+  **retained** after an mqtt reconnect.
+
 ## 1.0.0
 
 Rewrite on [mqtt-interfaces-core](https://github.com/hobbyquaker/mqtt-interfaces-core)
