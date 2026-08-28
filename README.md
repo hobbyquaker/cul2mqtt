@@ -58,8 +58,10 @@ raw traffic (`cul <` / `cul >`).
 
 ### Docker
 
+Multi-arch image (amd64, arm64, armv7):
+
 ```
-docker run -d --name cul2mqtt --device /dev/ttyACM0 --group-add $(stat -c %g /dev/ttyACM0) \
+docker run -d --name cul2mqtt --restart unless-stopped --device /dev/ttyACM0 --group-add $(stat -c %g /dev/ttyACM0) \
   -e CUL2MQTT_SERIALPORT=/dev/ttyACM0 -e CUL2MQTT_MQTT_URL=mqtt://192.168.1.2 \
   ghcr.io/hobbyquaker/cul2mqtt
 ```

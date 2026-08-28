@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.1.5
+
+### Added
+
+- Docker images on `ghcr.io/hobbyquaker/cul2mqtt`, built for amd64, arm64 and armv7 by the release
+  workflow on every tag (`x.y.z`, `x.y`, `latest`). The `docker run` line in the README works
+  without building the image first now.
+
 ## 1.1.4
 
 - mqtt-interfaces-core 0.8: the instance publishes `<name>/maintenance/stats` (memory, CPU share, event loop lag) every 60 s — `--stats-interval`, 0 = off; she shows it on the Instances tab.
