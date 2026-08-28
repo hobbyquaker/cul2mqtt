@@ -1,5 +1,6 @@
 import {parseConfig} from 'mqtt-interfaces-core';
 import pkg from './package.json' with {type: 'json'};
+import {discoveryHint} from './lib/discovery.js';
 
 export const OPTIONS = {
     serialport: {
@@ -7,6 +8,7 @@ export const OPTIONS = {
         type: 'string',
         describe: 'serial port of the CUL / COC / SCC, or "auto" to find the stick (see --discover)',
         default: '/dev/ttyACM0',
+        discover: true,
     },
     baudrate: {
         type: 'number',
@@ -64,7 +66,7 @@ export default parseConfig({
     pkg,
     options: OPTIONS,
     defaults: {name: 'cul'},
-    discovery: true,
+    discovery: discoveryHint(),
     examples: [
         ['$0 --discover', 'list the busware sticks plugged into this host and exit'],
         ['$0 -s /dev/ttyACM0 -u mqtt://broker', 'run in the foreground'],

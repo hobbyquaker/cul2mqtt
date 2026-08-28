@@ -13,11 +13,10 @@ import {OfflineTracker, timeoutsFromMap} from './lib/offline.js';
 import {handle as handleInstall} from './lib/install.js';
 import {discoveryHint} from './lib/discovery.js';
 
-handleInstall(config);
-
 /*
  * finding the stick (core B-2): --discover lists the busware sticks udev named, --serialport auto
- * uses the one it found. A CUNO on the network is configured with --host instead.
+ * uses the one it found. Before the installer on purpose: `--install -s auto` persists the by-id
+ * path rather than scanning on every service start. A CUNO on the network is --host instead.
  */
 if (config.discover || config.serialport === 'auto') {
     const discoveryLog = createLogger({envPrefix: config.$envPrefix || 'CUL2MQTT', level: config.verbosity});
@@ -33,6 +32,8 @@ if (config.discover || config.serialport === 'auto') {
         process.exit(1);
     }
 }
+
+handleInstall(config);
 
 const RECONNECT_MS = 10000;
 const OFFLINE_CHECK_MS = 10000;

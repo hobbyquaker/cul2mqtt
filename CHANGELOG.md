@@ -14,6 +14,10 @@
   `--serialport`. The by-id path is worth preferring over `/dev/ttyACM0` in any case: it survives
   a replug and a reboot.
 
+- `--install -s auto` persists the by-id path it found rather than leaving every service start to
+  scan; `--config-schema` marks `serialport` with `x-discover: "serial"`, which tells a management
+  UI (she) that this is a plain instant scan with no network affordances.
+
 ### Changed
 
 - Requires mqtt-interfaces-core ^0.9.0 (the scanning itself lives there).
