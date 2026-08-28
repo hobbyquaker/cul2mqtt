@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.2.0
+
+### Added
+
+- **Finding the stick**: `--discover` lists the busware sticks plugged into this host, by the
+  stable name udev gave them (`/dev/serial/by-id/usb-busware.de_CUL868-if00`) and the device node
+  it points at; `--discover-json` for JSON. `-s auto` runs the same scan at start and opens what
+  it found, refusing to start when none or more than one is plugged in rather than talking to the
+  wrong radio.
+- A stick counts as ours when its serial name contains both **busware** and **CUL** — a CUN, a
+  COC, a nanoCUL or another vendor's culfw clone is named differently and stays a job for
+  `--serialport`. The by-id path is worth preferring over `/dev/ttyACM0` in any case: it survives
+  a replug and a reboot.
+
+### Changed
+
+- Requires mqtt-interfaces-core ^0.9.0 (the scanning itself lives there).
+
 ## 1.1.5
 
 ### Added

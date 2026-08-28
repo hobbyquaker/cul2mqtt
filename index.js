@@ -3,7 +3,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import Cul from 'cul';
-import {createAdapter} from 'mqtt-interfaces-core';
+import {createAdapter, createLogger, runDiscovery, autoAddress} from 'mqtt-interfaces-core';
 import config from './config.js';
 import pkg from './package.json' with {type: 'json'};
 import {itemsFor, mapItem} from './lib/items.js';
@@ -11,8 +11,28 @@ import {commandFor} from './lib/commands.js';
 import {discoveryModel} from './lib/hadiscovery.js';
 import {OfflineTracker, timeoutsFromMap} from './lib/offline.js';
 import {handle as handleInstall} from './lib/install.js';
+import {discoveryHint} from './lib/discovery.js';
 
 handleInstall(config);
+
+/*
+ * finding the stick (core B-2): --discover lists the busware sticks udev named, --serialport auto
+ * uses the one it found. A CUNO on the network is configured with --host instead.
+ */
+if (config.discover || config.serialport === 'auto') {
+    const discoveryLog = createLogger({envPrefix: config.$envPrefix || 'CUL2MQTT', level: config.verbosity});
+    const hint = discoveryHint();
+    if (config.discover) {
+        await runDiscovery({hint, config, log: discoveryLog}); // prints and exits
+    }
+    try {
+        config.serialport = await autoAddress(hint, {config, log: discoveryLog});
+    } catch (err) {
+        // none, or two sticks: opening the wrong one talks to the wrong radio
+        discoveryLog.error('--serialport auto:', err.message);
+        process.exit(1);
+    }
+}
 
 const RECONNECT_MS = 10000;
 const OFFLINE_CHECK_MS = 10000;

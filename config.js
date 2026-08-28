@@ -5,7 +5,7 @@ export const OPTIONS = {
     serialport: {
         alias: 's',
         type: 'string',
-        describe: 'serial port of the CUL / COC / SCC',
+        describe: 'serial port of the CUL / COC / SCC, or "auto" to find the stick (see --discover)',
         default: '/dev/ttyACM0',
     },
     baudrate: {
@@ -64,7 +64,9 @@ export default parseConfig({
     pkg,
     options: OPTIONS,
     defaults: {name: 'cul'},
+    discovery: true,
     examples: [
+        ['$0 --discover', 'list the busware sticks plugged into this host and exit'],
         ['$0 -s /dev/ttyACM0 -u mqtt://broker', 'run in the foreground'],
         ['$0 --host cuno.lan -u mqtt://broker', 'CUNO via telnet'],
         ['sudo $0 --install -n cul -s /dev/ttyACM0 -u mqtt://broker', 'install as service cul2mqtt@cul'],

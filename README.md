@@ -32,7 +32,8 @@ raw traffic (`cul <` / `cul >`).
 
 | option                               | default            | description                                                                      |
 | ------------------------------------ | ------------------ | -------------------------------------------------------------------------------- |
-| `-s, --serialport`                   | `/dev/ttyACM0`     | serial port of the CUL / COC / SCC                                               |
+| `-s, --serialport`                   | `/dev/ttyACM0`     | serial port of the CUL / COC / SCC, or `auto` (see above)                        |
+| `--discover`                         |                    | list the busware sticks on this host and exit (`--discover-json` for JSON)       |
 | `--baudrate`                         | `9600`             | serial baud rate (`38400` with `--coc` / `--scc`)                                |
 | `-c, --cul-mode`                     | `SlowRF`           | RF mode: `SlowRF` (FS20, HMS, EM, S300TH, FHT, ...), `MORITZ` (MAX!) or `AskSin` |
 | `--coc`, `--scc`                     | off                | device is a Busware COC / SCC on a Raspberry Pi                                  |
@@ -55,6 +56,33 @@ raw traffic (`cul <` / `cul >`).
 | `--mqtt-tls-ca`                      |                    | CA certificate file for `mqtts://` brokers                                       |
 | `--config-schema`                    |                    | print a JSON Schema of all options and exit                                      |
 | `-v, --verbosity`                    | `info`             | `error`, `warn`, `info`, `debug`                                                 |
+
+### Finding the stick
+
+```
+cul2mqtt --discover
+```
+
+lists the busware sticks plugged into this host — udev has already named them, so there is
+nothing to scan:
+
+```
+/dev/serial/by-id/usb-busware.de_CUL868-if00  → /dev/ttyACM0  (serial)
+```
+
+Use the `by-id` path rather than `/dev/ttyACM0`: it survives a replug and a reboot, while the
+`ttyACM` number can swap with another stick's. `-s auto` does that for you — it runs the same
+scan at start and opens the stick it found, refusing to start when none or more than one busware
+CUL is plugged in rather than talking to the wrong radio:
+
+```
+cul2mqtt -s auto -u mqtt://192.168.1.2
+```
+
+Only sticks whose name contains both **busware** and **CUL** are recognised — that is what a
+CUL433/CUL868 looks like in `/dev/serial/by-id`. A CUN or COC, a nanoCUL, or any other vendor's
+culfw clone is named differently: give those to `--serialport` directly. A CUNO on the network is
+`--host` instead.
 
 ### Docker
 
