@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.3
+
+- `mqttInterfaces.needs` uses the vocabulary the core documents now: `serial` (was ["serial"]) — shown as badges in she's catalog.
+- Package description without the Home Assistant discovery clause (discovery is a given for adapters on the core).
+
 ## 1.1.2
 
 ### Added
