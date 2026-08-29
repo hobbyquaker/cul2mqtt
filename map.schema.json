@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "$id": "https://github.com/hobbyquaker/cul2mqtt/map.schema.json",
+  "title": "cul2mqtt map file",
+  "description": "Friendly item names: keys are <protocol>/<address> or <protocol>/<address>/<field> (case-insensitive), values the name that replaces the matched part, or an object with the name and an offline timeout.",
+  "type": "object",
+  "propertyNames": {
+    "pattern": "^[A-Za-z0-9_-]+/[A-Za-z0-9_-]+(/[A-Za-z0-9_-]+)?$"
+  },
+  "additionalProperties": {
+    "oneOf": [
+      {
+        "type": "string",
+        "minLength": 1,
+        "description": "friendly name"
+      },
+      {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "description": "friendly name"
+          },
+          "timeout": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "offline timeout in seconds; 0 disables offline detection for the device"
+          }
+        },
+        "required": ["name"],
+        "additionalProperties": false
+      }
+    ]
+  }
+}

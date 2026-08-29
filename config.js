@@ -27,6 +27,7 @@ export const OPTIONS = {
         alias: 'm',
         type: 'string',
         describe: 'JSON file mapping <protocol>/<address>[/<field>] to friendly item names (see example-map.json)',
+        file: {format: 'json', example: 'example-map.json', schema: 'map.schema.json', describe: 'friendly item names'},
     },
     'fht-central': {
         type: 'string',

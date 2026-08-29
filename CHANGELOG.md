@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.1.2
+
+### Added
+
+- `--map-file` is declared as a user-maintained JSON file (`x-file` in `--config-schema`, core
+  0.6.0) with `example-map.json` and the new `map.schema.json` — she's Services page can edit the
+  map with validation and create it from the example.
+
+### Changed
+
+- mqtt-interfaces-core 0.4.0: `--config-schema` marks `--mqtt-password` as secret (`x-secret`).
+- package.json carries the npm keyword `mqtt-interfaces` and the `mqttInterfaces` field
+  (spec 2.0, env prefix, needs serial port, `SupplementaryGroups=dialout`) so adapter catalogs —
+  she's Services page — can find and describe cul2mqtt.
+
 ## 1.1.1
 
 ### Fixed
