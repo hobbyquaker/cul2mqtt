@@ -1,6 +1,6 @@
 {
   "name": "cul2mqtt",
-  "version": "1.1.3",
+  "version": "1.1.4",
   "description": "Interface between Busware CUL (FS20, EM, HMS, S300TH, FHT, MAX!, ...) and MQTT",
   "type": "module",
   "main": "index.js",
@@ -66,7 +66,7 @@
   },
   "dependencies": {
     "cul": "^1.0.0",
-    "mqtt-interfaces-core": "^0.6.0"
+    "mqtt-interfaces-core": "^0.8.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.0.0",
