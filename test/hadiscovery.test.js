@@ -87,14 +87,15 @@ describe('discoveryModel', () => {
         const [, ws, em] = discoveryModel({name: 'cul', items});
         assert.deepEqual(Object.keys(ws.components), ['temperature']);
         assert.deepEqual(ws.availability, [
-            {t: 'cul/connected', avty_tpl: "{{ 'online' if (value | int(0)) >= 2 else 'offline' }}"},
-            {t: 'cul/status/ws/1/online', avty_tpl: "{{ 'online' if value_json.val else 'offline' }}"},
+            {t: 'cul/connected', val_tpl: "{{ 'online' if (value | int(0)) >= 2 else 'offline' }}"},
+            {t: 'cul/status/ws/1/online', val_tpl: "{{ 'online' if value_json.val else 'offline' }}"},
         ]);
         // a device seen only through its online item still gets a (component-less) block
         assert.equal(em.device.name, 'em/0205');
         assert.deepEqual(em.components, {});
         const [, plain] = discoveryModel({name: 'cul', items, jsonPayloads: false});
-        assert.equal(plain.availability[1].avty_tpl, "{{ 'online' if value == '1' else 'offline' }}");
+        assert.equal(plain.availability[1].avty_tpl, undefined);
+        assert.equal(plain.availability[1].val_tpl, "{{ 'online' if value == '1' else 'offline' }}");
     });
 
     test('splitItem / uidFor', () => {

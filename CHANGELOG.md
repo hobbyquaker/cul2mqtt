@@ -1,5 +1,22 @@
 # Changelog
 
+## 1.2.1
+
+### Fixed
+
+- **Home Assistant refused every device cul2mqtt published.** The availability entries of the
+  discovery payload carried `avty_tpl` — the shared one from the core and the per-device online
+  one here. Inside an entry of an `availability` list that key expands to `availability_template`,
+  which Home Assistant's schema for such an entry does not allow (there the template is `val_tpl`),
+  and the device payload is validated as a whole: HA logged "Invalid MQTT device discovery payload"
+  through `homeassistant.components.mqtt.discovery` and created nothing of the device. Found on
+  lgtv2mqtt ([#20](https://github.com/hobbyquaker/lgtv2mqtt/issues/20)), fixed in
+  `mqtt-interfaces-core` 0.15.2 and here.
+  **After updating**, clear the retained discovery messages once so nothing of the refused payloads
+  is left behind (`mosquitto_sub -t 'homeassistant/device/#' -v` shows them; an empty retained
+  message on such a topic removes it).
+- The core moves from 0.9 to 0.15.2 with this release.
+
 ## 1.2.0
 
 ### Added
